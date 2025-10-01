@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stormsaver Stock Tracker</title>
+  <style>
+    :root{
+      --bg:#f7fbff;
+      --blue1:#0ea5e9;
+      --blue2:#2563eb;
+      --blue3:#1d4ed8;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --ring: rgba(37,99,235,0.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: linear-gradient(180deg, #eaf4ff 0%, #f7fbff 50%, #ffffff 100%);
+      color:var(--text);
+    }
+    header{
+      padding:32px 16px; text-align:center;
+      background: radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,0.25), transparent);
+    }
+    h1{
+      margin:0;
+      font-size:clamp(1.6rem, 2.5vw + 1rem, 2.5rem);
+      letter-spacing:0.3px;
+      background: linear-gradient(90deg, var(--blue2), var(--blue1));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight:800;
+    }
+    .subtitle{ color:var(--muted); margin-top:8px }
+    .container{ max-width:900px; margin:24px auto; padding:0 16px }
+    .card{
+      background: var(--card);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(30,64,175,0.10);
+    }
+    .row{ display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .input{
+      display:flex; flex-direction:column; gap:8px;
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px;
+    }
+    label{ font-size:0.9rem; color:var(--muted); }
+    input[type="number"]{
+      font-size:1.1rem; padding:10px 12px; border-radius:10px;
+      border:1px solid #cbd5e1; background:white; outline:none;
+    }
+    input[type="number"]:focus{ box-shadow:0 0 0 6px var(--ring); border-color: var(--blue2); }
+    .btn{
+      appearance:none; border:none; cursor:pointer;
+      background: linear-gradient(135deg, var(--blue2), var(--blue3));
+      color:white; padding:14px 18px; border-radius:14px; font-weight:700; font-size:1rem;
+      transition: transform .04s ease, box-shadow .2s ease;
+      box-shadow: 0 10px 20px rgba(29,78,216,0.25);
+    }
+    .btn:active{ transform: translateY(1px) }
+    .pill{
+      display:inline-flex; align-items:center; gap:10px;
+      background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10));
+      color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25);
+    }
+    .meta{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 0 }
+    .muted{ color: var(--muted) }
+    .footer{ color: #64748b; text-align:center; padding:24px; font-size:.9rem }
+    .hidden{ display:none }
+    .notice{ margin-top:14px; font-size:0.95rem }
+    .ok{ color:#166534 }
+    .err{ color:#991b1b }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Stormsaver Stock Tracker</h1>
+    <div class="subtitle">Scan a part QR • confirm the part • apply your change</div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="meta">
+        <span class="pill" id="pill-part">Part: <strong id="part-id">–</strong></span>
+        <span class="pill" id="pill-loc">Location: <strong id="loc">–</strong></span>
+        <span class="pill" id="pill-desc">Desc: <strong id="desc">–</strong></span>
+        <span class="pill hidden" id="pill-live">Live Count: <strong id="live">–</strong></span>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <div class="input">
+          <label for="taken">Amount TAKEN (minus)</label>
+          <input id="taken" type="number" min="0" step="1" placeholder="e.g. 3" />
+        </div>
+        <div class="input">
+          <label for="added">Amount ADDED (plus)</label>
+          <input id="added" type="number" min="0" step="1" placeholder="e.g. 5" />
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap">
+        <button class="btn" id="submit">Update stock</button>
+        <span class="muted">Tip: leave one of the boxes at 0.</span>
+      </div>
+
+      <div class="notice muted" id="status"></div>
+    </div>
+
+    <div class="footer">
+      This page updates your Google Sheet via an Apps Script Web App. Replace the <code>WEB_APP_URL</code> in the source.
+    </div>
+  </div>
+
+  <script>
+    // --- CONFIG: paste your deployed Apps Script Web App URL here ---
+    const WEB_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    const qs = new URLSearchParams(window.location.search);
+    const part = qs.get("part") || "UNKNOWN";
+    const loc  = qs.get("loc")  || "A";
+    const desc = qs.get("desc") || "";
+
+    document.getElementById("part-id").textContent = part;
+    document.getElementById("loc").textContent = loc;
+    document.getElementById("desc").textContent = desc;
+
+    const takenEl = document.getElementById("taken");
+    const addedEl = document.getElementById("added");
+    const statusEl = document.getElementById("status");
+    const submitBtn = document.getElementById("submit");
+
+    function msg(text, ok=false){
+      statusEl.className = "notice " + (ok ? "ok" : "err");
+      statusEl.textContent = text;
+    }
+
+    submitBtn.addEventListener("click", async () => {
+      const taken = parseInt(takenEl.value || "0", 10);
+      const added = parseInt(addedEl.value || "0", 10);
+      if (isNaN(taken) || isNaN(added) || (taken === 0 && added === 0)){
+        msg("Enter a value in either TAKEN or ADDED.", false); return;
+      }
+      const delta = (added || 0) - (taken || 0);
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ part, loc, delta })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if (res.ok){
+          msg(data.message || "Updated ✔", true);
+        } else {
+          msg(data.error || "Update failed.", false);
+        }
+      } catch (e){
+        msg("Network error. Check the web app URL.", false);
+      }
+    });
+  </script>
+</body>
+</html>
