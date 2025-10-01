@@ -5,49 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Stormsaver Stock Tracker</title>
   <style>
-    :root{
-      --bg:#f7fbff;
-      --blue1:#0ea5e9;
-      --blue2:#2563eb;
-      --blue3:#1d4ed8;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#475569;
-      --ring: rgba(37,99,235,0.35);
-    }
-	*{box-sizing:border-box}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: linear-gradient(180deg, #eaf4ff 0%, #f7fbff 50%, #ffffff 100%);
-      color:var(--text);
-    }
-    header{
-      padding:32px 16px; text-align:center;
-      background: radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,0.25), transparent);
-    }
-    h1{
-      margin:0; font-size:clamp(1.6rem,2.5vw+1rem,2.5rem);
-      letter-spacing:0.3px;
-      background: linear-gradient(90deg, var(--blue2), var(--blue1));
-      -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800;
-    }
+    :root{ --bg:#f7fbff; --blue1:#0ea5e9; --blue2:#2563eb; --blue3:#1d4ed8; --card:#fff; --text:#0f172a; --muted:#475569; --ring: rgba(37,99,235,.35); }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#eaf4ff 0%,#f7fbff 50%,#fff 100%); color:var(--text) }
+    header{ padding:32px 16px; text-align:center; background:radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,.25), transparent) }
+    h1{ margin:0; font-size:clamp(1.6rem,2.5vw+1rem,2.5rem); letter-spacing:.3px; background:linear-gradient(90deg,var(--blue2),var(--blue1)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800 }
     .subtitle{ color:var(--muted); margin-top:8px }
     .container{ max-width:900px; margin:24px auto; padding:0 16px }
-    .card{ background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(30,64,175,.10); }
-    .row{ display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .input{ display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; }
-    label{ font-size:0.9rem; color:var(--muted); }
-    input[type="number"]{ font-size:1.1rem; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; background:white; outline:none; }
-    input[type="number"]:focus{ box-shadow:0 0 0 6px var(--ring); border-color: var(--blue2); }
-    .btn{ appearance:none; border:none; cursor:pointer; background:linear-gradient(135deg, var(--blue2), var(--blue3)); color:white; padding:14px 18px; border-radius:14px; font-weight:700; font-size:1rem; transition: transform .04s ease, box-shadow .2s ease; box-shadow:0 10px 20px rgba(29,78,216,.25); }
-    .btn:active{ transform: translateY(1px) }
-    .pill{ display:inline-flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10)); color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25); }
+    .card{ background:var(--card); border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(30,64,175,.10) }
+    .row{ display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)) }
+    .input{ display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px }
+    label{ font-size:.9rem; color:var(--muted) }
+    input[type="number"]{ font-size:1.1rem; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; background:white; outline:none }
+    input[type="number"]:focus{ box-shadow:0 0 0 6px var(--ring); border-color:var(--blue2) }
+    .btn{ appearance:none; border:none; cursor:pointer; background:linear-gradient(135deg,var(--blue2),var(--blue3)); color:white; padding:14px 18px; border-radius:14px; font-weight:700; font-size:1rem; transition:transform .04s, box-shadow .2s; box-shadow:0 10px 20px rgba(29,78,216,.25) }
+    .btn:active{ transform:translateY(1px) }
+    .pill{ display:inline-flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10)); color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25) }
     .meta{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 0 }
-    .muted{ color: var(--muted) }
-    .footer{ color: #64748b; text-align:center; padding:24px; font-size:.9rem }
-    .hidden{ display:none }
-    .notice{ margin-top:14px; font-size:0.95rem }
+    .muted{ color:#475569 }
+    .notice{ margin-top:14px; font-size:.95rem }
     .ok{ color:#166534 } .err{ color:#991b1b }
+    .footer{ color:#64748b; text-align:center; padding:24px; font-size:.9rem }
   </style>
 </head>
 <body>
@@ -62,7 +40,7 @@
         <span class="pill">Part: <strong id="part-id">–</strong></span>
         <span class="pill">Location: <strong id="loc">–</strong></span>
         <span class="pill">Desc: <strong id="desc">–</strong></span>
-        <span class="pill" id="pill-live">Live Count: <strong id="live">–</strong></span>
+        <span class="pill">Live Count: <strong id="live">–</strong></span>
       </div>
 
       <div class="row" style="margin-top:18px">
@@ -84,17 +62,18 @@
       <div class="notice muted" id="status"></div>
     </div>
 
-    <div class="footer">This page updates your Google Sheet via an Apps Script Web App.</div>
+    <div class="footer">This page reads & updates your Google Sheet via JSONP (no CORS).</div>
   </div>
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZgnDlyjN7EN9-Z6NEXoRJ7vzzwaDFFB0E9za0_vi7D5KlSwuhbf2sU8scJm8mHChG/exec";
 
     const qs = new URLSearchParams(window.location.search);
-    const part = qs.get("part") || "UNKNOWN";
-    const loc  = qs.get("loc")  || "A";
+    const part = (qs.get("part") || "UNKNOWN").toUpperCase();
+    const loc  = (qs.get("loc")  || "A").toUpperCase();
     const desc = qs.get("desc") || "";
 
+    const liveEl = document.getElementById("live");
     document.getElementById("part-id").textContent = part;
     document.getElementById("loc").textContent = loc;
     document.getElementById("desc").textContent = desc;
@@ -102,57 +81,54 @@
     const takenEl = document.getElementById("taken");
     const addedEl = document.getElementById("added");
     const statusEl = document.getElementById("status");
-    const liveEl = document.getElementById("live");
-    const submitBtn = document.getElementById("submit");
 
     function msg(text, ok=false){
       statusEl.className = "notice " + (ok ? "ok" : "err");
       statusEl.textContent = text;
     }
 
-    // === READ live count via JSONP (no CORS needed) ===
-    function refreshLive(){
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      window[cb] = (data) => {
-        if (data && data.ok) {
-          liveEl.textContent = data.live;
-        }
-        // cleanup
-        delete window[cb];
-        script.remove();
-      };
-      const script = document.createElement("script");
-      const url = WEB_APP_URL + "?part=" + encodeURIComponent(part) + "&loc=" + encodeURIComponent(loc) + "&callback=" + cb;
-      script.src = url;
-      document.body.appendChild(script);
+    // JSONP helper
+    function jsonp(url){
+      return new Promise((resolve) => {
+        const cb = "cb_" + Math.random().toString(36).slice(2);
+        window[cb] = (data) => { try { resolve(data); } finally { delete window[cb]; s.remove(); } };
+        const s = document.createElement("script");
+        s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+        document.body.appendChild(s);
+      });
     }
 
-    // Initial live load
-    refreshLive();
+    async function loadLive(){
+      const res = await jsonp(`${WEB_APP_URL}?part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}`);
+      if (res && res.ok){
+        liveEl.textContent = res.live;
+        msg("", true);
+      } else {
+        liveEl.textContent = "–";
+        msg(res && res.error ? res.error : "Could not read live count", false);
+      }
+    }
 
-    // === WRITE update (no-cors simple POST), then re-read live ===
-    submitBtn.addEventListener("click", async () => {
+    document.getElementById("submit").addEventListener("click", async () => {
       const taken = parseInt(takenEl.value || "0", 10);
       const added = parseInt(addedEl.value || "0", 10);
-      if (isNaN(taken) || isNaN(added) || (taken === 0 && added === 0)){
+      if ((isNaN(taken) || isNaN(added)) || (taken === 0 && added === 0)) {
         msg("Enter a value in either TAKEN or ADDED.", false); return;
       }
       const delta = (added || 0) - (taken || 0);
 
-      try {
-        await fetch(WEB_APP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ part, loc, delta })
-        });
-        msg("Update sent ✔", true);
+      const res = await jsonp(`${WEB_APP_URL}?part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}`);
+      if (res && res.ok){
+        liveEl.textContent = res.live;
         takenEl.value = ""; addedEl.value = "";
-        setTimeout(refreshLive, 600); // small delay to allow sheet to commit
-      } catch (e){
-        msg("Network error. Check your Apps Script deployment.", false);
+        msg(`Updated ✔ (was ${res.live_before}, now ${res.live})`, true);
+      } else {
+        msg(res && res.error ? res.error : "Update failed.", false);
       }
     });
+
+    // Initial load
+    loadLive();
   </script>
 </body>
 </html>
