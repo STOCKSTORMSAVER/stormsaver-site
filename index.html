@@ -1,49 +1,56 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stormsaver Stock Tracker</title>
-  <style>
-    :root{ --bg:#f7fbff; --blue1:#0ea5e9; --blue2:#2563eb; --blue3:#1d4ed8; --card:#fff; --text:#0f172a; --muted:#475569; --ring: rgba(37,99,235,.35); }
-    *{box-sizing:border-box}
-    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#eaf4ff 0%,#f7fbff 50%,#fff 100%); color:var(--text) }
-    header{ padding:32px 16px; text-align:center; background:radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,.25), transparent) }
-    h1{ margin:0; font-size:clamp(1.6rem,2.5vw+1rem,2.5rem); letter-spacing:.3px; background:linear-gradient(90deg,var(--blue2),var(--blue1)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800 }
-    .subtitle{ color:var(--muted); margin-top:8px }
-    .container{ max-width:900px; margin:24px auto; padding:0 16px }
-    .card{ background:var(--card); border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(30,64,175,.10) }
-    .row{ display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)) }
-    .input{ display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px }
-    label{ font-size:.9rem; color:var(--muted) }
-    input[type="number"]{ font-size:1.1rem; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; background:white; outline:none }
-    input[type="number"]:focus{ box-shadow:0 0 0 6px var(--ring); border-color:var(--blue2) }
-    .btn{ appearance:none; border:none; cursor:pointer; background:linear-gradient(135deg,var(--blue2),var(--blue3)); color:white; padding:14px 18px; border-radius:14px; font-weight:700; font-size:1rem; transition:transform .04s, box-shadow .2s; box-shadow:0 10px 20px rgba(29,78,216,.25) }
-    .btn:active{ transform:translateY(1px) }
-    .pill{ display:inline-flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10)); color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25) }
-    .meta{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 0 }
-    .muted{ color:#475569 }
-    .notice{ margin-top:14px; font-size:.95rem }
-    .ok{ color:#166534 } .err{ color:#991b1b }
-    .footer{ color:#64748b; text-align:center; padding:24px; font-size:.9rem }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stormsaver Stock Tracker</title>
+<style>
+  :root{ --bg:#f7fbff; --blue1:#0ea5e9; --blue2:#2563eb; --blue3:#1d4ed8; --card:#fff; --text:#0f172a; --muted:#475569; --ring: rgba(37,99,235,.35); }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#eaf4ff 0%,#f7fbff 50%,#fff 100%); color:var(--text) }
+  header{ padding:32px 16px; text-align:center; background:radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,.25), transparent) }
+  h1{ margin:0; font-size:clamp(1.6rem,2.5vw+1rem,2.5rem); letter-spacing:.3px; background:linear-gradient(90deg,var(--blue2),var(--blue1)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800 }
+  .subtitle{ color:var(--muted); margin-top:8px }
+  .container{ max-width:1024px; margin:24px auto; padding:0 16px }
+  .card{ background:var(--card); border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(30,64,175,.10); margin-bottom:18px }
+  .row{ display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .input{ display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px }
+  label{ font-size:.9rem; color:var(--muted) }
+  input[type="number"], select{ font-size:1.05rem; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; background:white; outline:none }
+  input[type="number"]:focus, select:focus{ box-shadow:0 0 0 6px var(--ring); border-color:var(--blue2) }
+  .btn{ appearance:none; border:none; cursor:pointer; background:linear-gradient(135deg,var(--blue2),var(--blue3)); color:white; padding:12px 16px; border-radius:12px; font-weight:700; font-size:1rem; transition: transform .04s ease, box-shadow .2s ease; box-shadow:0 10px 20px rgba(29,78,216,.25) }
+  .btn:active{ transform: translateY(1px) }
+  .pill{ display:inline-flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10)); color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25) }
+  .meta{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 0 }
+  .muted{ color:#64748b }
+  .notice{ margin-top:12px; font-size:.95rem }
+  .ok{ color:#166534 } .err{ color:#991b1b }
+  table{ width:100%; border-collapse:collapse; font-size:.95rem }
+  th, td{ padding:8px 10px; border-bottom:1px solid #e2e8f0; text-align:left; }
+  th{ background:#f8fafc; font-weight:700 }
+</style>
 </head>
 <body>
   <header>
     <h1>Stormsaver Stock Tracker</h1>
-    <div class="subtitle">Scan a part QR • confirm the part • apply your change</div>
+    <div class="subtitle">Scan a part QR • confirm the part • apply your change • transfer to a van</div>
   </header>
 
   <div class="container">
+    <!-- Meta -->
     <div class="card">
       <div class="meta">
         <span class="pill">Part: <strong id="part-id">–</strong></span>
         <span class="pill">Location: <strong id="loc">–</strong></span>
         <span class="pill">Desc: <strong id="desc">–</strong></span>
-        <span class="pill">Live Count: <strong id="live">–</strong></span>
+        <span class="pill">Live Count (here): <strong id="live">–</strong></span>
       </div>
+    </div>
 
-      <div class="row" style="margin-top:18px">
+    <!-- Adjust at current location -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Adjust stock at this location</h3>
+      <div class="row">
         <div class="input">
           <label for="taken">Amount TAKEN (minus)</label>
           <input id="taken" type="number" min="0" step="1" placeholder="e.g. 3" />
@@ -53,82 +60,182 @@
           <input id="added" type="number" min="0" step="1" placeholder="e.g. 5" />
         </div>
       </div>
-
-      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap">
-        <button class="btn" id="submit">Update stock</button>
-        <span class="muted">Tip: leave one of the boxes at 0.</span>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="btn-update">Update stock</button>
+        <span class="muted">Tip: leave one box at 0.</span>
       </div>
-
-      <div class="notice muted" id="status"></div>
+      <div class="notice muted" id="status-update"></div>
     </div>
 
-    <div class="footer">This page reads & updates your Google Sheet via JSONP (no CORS).</div>
+    <!-- Transfer between workshop and van -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Transfer between this location and a van</h3>
+      <div class="row">
+        <div class="input">
+          <label for="van">Select van</label>
+          <select id="van">
+            <option value="">— loading vans —</option>
+          </select>
+        </div>
+        <div class="input">
+          <label>Direction</label>
+          <div style="display:flex; gap:12px; align-items:center">
+            <label><input type="radio" name="dir" value="to-van" checked /> This location → Van</label>
+            <label><input type="radio" name="dir" value="to-workshop" /> Van → This location</label>
+          </div>
+        </div>
+        <div class="input">
+          <label for="qty">Quantity to transfer</label>
+          <input id="qty" type="number" min="1" step="1" placeholder="e.g. 4" />
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="btn-transfer">Transfer</button>
+      </div>
+      <div class="notice muted" id="status-transfer"></div>
+    </div>
+
+    <!-- Recent changes -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Recent changes</h3>
+      <div class="notice muted" id="status-log"></div>
+      <div style="overflow:auto">
+        <table id="log-table">
+          <thead>
+            <tr><th>Time</th><th>Op</th><th>Part</th><th>From</th><th>To</th><th>Qty/Δ</th><th>User</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="muted" style="text-align:center; padding:10px 0 24px 0">Updates use JSONP (no CORS). If anything fails, check your Apps Script deployment & TAB_NAME.</div>
   </div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZgnDlyjN7EN9-Z6NEXoRJ7vzzwaDFFB0E9za0_vi7D5KlSwuhbf2sU8scJm8mHChG/exec";
+<script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZgnDlyjN7EN9-Z6NEXoRJ7vzzwaDFFB0E9za0_vi7D5KlSwuhbf2sU8scJm8mHChG/exec";
 
-    const qs = new URLSearchParams(window.location.search);
-    const part = (qs.get("part") || "UNKNOWN").toUpperCase();
-    const loc  = (qs.get("loc")  || "A").toUpperCase();
-    const desc = qs.get("desc") || "";
+  // Query params from QR
+  const qs = new URLSearchParams(window.location.search);
+  const part = (qs.get("part") || "UNKNOWN").toUpperCase();
+  const loc  = (qs.get("loc")  || "A").toUpperCase();   // e.g., "A" or "A09"
+  const desc = qs.get("desc") || "";
 
-    const liveEl = document.getElementById("live");
-    document.getElementById("part-id").textContent = part;
-    document.getElementById("loc").textContent = loc;
-    document.getElementById("desc").textContent = desc;
+  // UI refs
+  const liveEl = document.getElementById("live");
+  document.getElementById("part-id").textContent = part;
+  document.getElementById("loc").textContent = loc;
+  document.getElementById("desc").textContent = desc;
 
-    const takenEl = document.getElementById("taken");
-    const addedEl = document.getElementById("added");
-    const statusEl = document.getElementById("status");
+  const takenEl = document.getElementById("taken");
+  const addedEl = document.getElementById("added");
+  const statusUpdate = document.getElementById("status-update");
 
-    function msg(text, ok=false){
-      statusEl.className = "notice " + (ok ? "ok" : "err");
-      statusEl.textContent = text;
-    }
+  const vanSel = document.getElementById("van");
+  const qtyEl  = document.getElementById("qty");
+  const statusTransfer = document.getElementById("status-transfer");
 
-    // JSONP helper
-    function jsonp(url){
-      return new Promise((resolve) => {
-        const cb = "cb_" + Math.random().toString(36).slice(2);
-        window[cb] = (data) => { try { resolve(data); } finally { delete window[cb]; s.remove(); } };
-        const s = document.createElement("script");
-        s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
-        document.body.appendChild(s);
-      });
-    }
+  const logTBody = document.querySelector("#log-table tbody");
+  const statusLog = document.getElementById("status-log");
 
-    async function loadLive(){
-      const res = await jsonp(`${WEB_APP_URL}?part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}`);
-      if (res && res.ok){
-        liveEl.textContent = res.live;
-        msg("", true);
-      } else {
-        liveEl.textContent = "–";
-        msg(res && res.error ? res.error : "Could not read live count", false);
-      }
-    }
+  function msg(el, text, ok=false){ el.className = "notice " + (ok ? "ok":"err"); el.textContent = text; }
 
-    document.getElementById("submit").addEventListener("click", async () => {
-      const taken = parseInt(takenEl.value || "0", 10);
-      const added = parseInt(addedEl.value || "0", 10);
-      if ((isNaN(taken) || isNaN(added)) || (taken === 0 && added === 0)) {
-        msg("Enter a value in either TAKEN or ADDED.", false); return;
-      }
-      const delta = (added || 0) - (taken || 0);
-
-      const res = await jsonp(`${WEB_APP_URL}?part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}`);
-      if (res && res.ok){
-        liveEl.textContent = res.live;
-        takenEl.value = ""; addedEl.value = "";
-        msg(`Updated ✔ (was ${res.live_before}, now ${res.live})`, true);
-      } else {
-        msg(res && res.error ? res.error : "Update failed.", false);
-      }
+  // JSONP helper
+  function jsonp(url){
+    return new Promise((resolve) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      window[cb] = (data) => { try { resolve(data); } finally { delete window[cb]; s.remove(); } };
+      const s = document.createElement("script");
+      s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+      document.body.appendChild(s);
     });
+  }
 
-    // Initial load
-    loadLive();
-  </script>
+  async function loadLive(){
+    const res = await jsonp(`${WEB_APP_URL}?op=read&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}`);
+    if (res && res.ok){ liveEl.textContent = res.live; statusUpdate.textContent = ""; }
+    else { liveEl.textContent = "–"; msg(statusUpdate, res && res.error ? res.error : "Could not read live count"); }
+  }
+
+  async function loadVans(){
+    vanSel.innerHTML = `<option value="">— select van —</option>`;
+    const res = await jsonp(`${WEB_APP_URL}?op=listVans`);
+    if (res && res.ok && Array.isArray(res.vans)){
+      for (const v of res.vans){
+        const opt = document.createElement("option");
+        opt.value = v; opt.textContent = v;
+        vanSel.appendChild(opt);
+      }
+    } else {
+      const opt = document.createElement("option");
+      opt.value = ""; opt.textContent = "No vans found";
+      vanSel.appendChild(opt);
+    }
+  }
+
+  async function loadLog(){
+    logTBody.innerHTML = "";
+    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=50`);
+    if (res && res.ok){
+      statusLog.textContent = "";
+      for (const r of res.logs){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${new Date(r.timestamp).toLocaleString()}</td>
+                        <td>${r.op}</td>
+                        <td>${r.part}</td>
+                        <td>${r.from||""}</td>
+                        <td>${r.to||""}</td>
+                        <td>${r.qty}</td>
+                        <td>${r.user||""}</td>`;
+        logTBody.appendChild(tr);
+      }
+    } else {
+      msg(statusLog, res && res.error ? res.error : "Could not load log");
+    }
+  }
+
+  document.getElementById("btn-update").addEventListener("click", async () => {
+    const taken = parseInt(takenEl.value || "0", 10);
+    const added = parseInt(addedEl.value || "0", 10);
+    if ((isNaN(taken) || isNaN(added)) || (taken === 0 && added === 0)) {
+      msg(statusUpdate, "Enter a value in either TAKEN or ADDED."); return;
+    }
+    const delta = (added || 0) - (taken || 0);
+    const res = await jsonp(`${WEB_APP_URL}?op=update&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}`);
+    if (res && res.ok){
+      msg(statusUpdate, `Updated ✔ (was ${res.live_before}, now ${res.live})`, true);
+      takenEl.value = ""; addedEl.value = "";
+      loadLive(); loadLog();
+    } else {
+      msg(statusUpdate, res && res.error ? res.error : "Update failed");
+    }
+  });
+
+  document.getElementById("btn-transfer").addEventListener("click", async () => {
+    const van = vanSel.value.trim();
+    if (!van) { msg(statusTransfer, "Please select a van."); return; }
+    const qty = parseInt(qtyEl.value || "0", 10);
+    if (!(qty > 0)) { msg(statusTransfer, "Enter a quantity > 0."); return; }
+    const dir = (document.querySelector('input[name="dir"]:checked') || {}).value || "to-van";
+
+    // Map direction → from / to
+    let from = loc, to = van;
+    if (dir === "to-workshop"){ from = van; to = loc; }
+
+    const res = await jsonp(`${WEB_APP_URL}?op=transfer&part=${encodeURIComponent(part)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&qty=${encodeURIComponent(qty)}`);
+    if (res && res.ok){
+      msg(statusTransfer, `Transferred ✔ ${qty} (${res.from} → ${res.to})`, true);
+      qtyEl.value = "";
+      loadLive(); loadLog();
+    } else {
+      msg(statusTransfer, res && res.error ? res.error : "Transfer failed");
+    }
+  });
+
+  // Init
+  loadLive();
+  loadVans();
+  loadLog();
+</script>
 </body>
 </html>
