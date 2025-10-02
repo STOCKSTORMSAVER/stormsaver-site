@@ -106,7 +106,7 @@
 
     <!-- Recent changes -->
     <div class="card">
-      <h3 style="margin:0 0 12px 0">Recent changes (Tracker History)</h3>
+      <h3 style="margin:0 0 12px 0">Recent changes (last 5)</h3>
       <div class="notice muted" id="status-log"></div>
       <div style="overflow:auto">
         <table id="log-table">
@@ -212,9 +212,10 @@
     }
   }
 
+  // LIMIT RECENT LOG TO 5
   async function loadLog(){
     logTBody.innerHTML = "";
-    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=50${userParam()}`);
+    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`); // only 5
     if (res && res.ok){
       statusLog.textContent = "";
       for (const r of res.logs){
@@ -229,6 +230,10 @@
                         <td>${r.van||""}</td>
                         <td>${r.vanQty||""}</td>`;
         logTBody.appendChild(tr);
+      }
+      if (!res.logs || !res.logs.length){
+        statusLog.className = "notice muted";
+        statusLog.textContent = "No recent changes.";
       }
     } else {
       statusLog.className = "notice err"; statusLog.textContent = (res && res.error) || "Could not load history";
