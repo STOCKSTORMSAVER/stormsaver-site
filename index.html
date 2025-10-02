@@ -124,6 +124,18 @@
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbywUc4qR_sLSSzFS2OY_EdVIy28UiQo6eI8aepG0Q_jNd4fzmiRxijYqIE5rjJD6zqSNg/exec";
 
+  // Seeded vans: always shown, merged with what the script discovers
+  const SEEDED_VANS = [
+    'N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX',
+    'YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'
+  ];
+  const normPlate = s => {
+    if (!s) return '';
+    s = String(s).toUpperCase().trim();
+    const m = s.match(/([A-Z0-9]{1,4})[-\s]?([A-Z]{3})$/);
+    return m ? (m[1] + ' ' + m[2]) : '';
+  };
+
   // QR params
   const qs = new URLSearchParams(window.location.search);
   const part = (qs.get("part") || "UNKNOWN").toUpperCase();
@@ -174,16 +186,28 @@
 
   async function loadVans(){
     vanSel.innerHTML = `<option value="">— select van —</option>`;
-    const res = await jsonp(`${WEB_APP_URL}?op=listvans${userParam()}`);
-    if (res && res.ok && Array.isArray(res.vans)){
-      for (const v of res.vans){
-        const opt = document.createElement("option");
-        opt.value = v; opt.textContent = v;
-        vanSel.appendChild(opt);
+
+    // Start with seeded vans
+    const set = new Set(SEEDED_VANS.map(normPlate).filter(Boolean));
+
+    // Ask script for discovered vans and merge
+    try {
+      const res = await jsonp(`${WEB_APP_URL}?op=listvans${userParam()}`);
+      if (res && res.ok && Array.isArray(res.vans)){
+        res.vans.map(normPlate).filter(Boolean).forEach(v => set.add(v));
       }
-    } else {
+    } catch(e){ /* ignore errors, we still have the seeded list */ }
+
+    const vans = Array.from(set).sort();
+    if (!vans.length){
       const opt = document.createElement("option");
-      opt.value = ""; opt.textContent = (res && res.error) ? res.error : "No vans found";
+      opt.value = ""; opt.textContent = "No vans available";
+      vanSel.appendChild(opt);
+      return;
+    }
+    for (const v of vans){
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = v;
       vanSel.appendChild(opt);
     }
   }
@@ -229,7 +253,7 @@
   });
 
   document.getElementById("btn-transfer").addEventListener("click", async () => {
-    const van = (vanSel.value || "").trim();
+    let van = normPlate(vanSel.value || "");
     if (!van) { statusTransfer.className="notice err"; statusTransfer.textContent = "Please select a van."; return; }
     const qty = parseInt(qtyEl.value || "0", 10);
     if (!(qty > 0)) { statusTransfer.className="notice err"; statusTransfer.textContent = "Enter a quantity > 0."; return; }
