@@ -33,10 +33,11 @@
 <body>
   <header>
     <h1>Stormsaver Stock Tracker</h1>
-    <div class="subtitle">Add your initials • adjust stock • transfer to a van • see history</div>
+    <div class="subtitle">Add your initials • adjust stock • transfer to a van • install from van • see history</div>
   </header>
 
   <div class="container">
+    <!-- User initials -->
     <div class="card">
       <div class="row">
         <div class="input">
@@ -47,6 +48,7 @@
       <div class="notice muted" id="status-user"></div>
     </div>
 
+    <!-- Meta -->
     <div class="card">
       <div class="meta">
         <span class="pill">Part: <strong id="part-id">–</strong></span>
@@ -56,6 +58,7 @@
       </div>
     </div>
 
+    <!-- Adjust current location -->
     <div class="card">
       <h3 style="margin:0 0 12px 0">Adjust stock at this location</h3>
       <div class="row">
@@ -75,6 +78,7 @@
       <div class="notice muted" id="status-update"></div>
     </div>
 
+    <!-- Transfer / Install -->
     <div class="card">
       <h3 style="margin:0 0 12px 0">Transfer between this location and a van</h3>
       <div class="row">
@@ -90,19 +94,23 @@
           </div>
         </div>
         <div class="input">
-          <label for="qty">Quantity to transfer</label>
+          <label for="qty">Quantity</label>
           <input id="qty" type="number" min="1" step="1" placeholder="e.g. 4" />
         </div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
         <button class="btn" id="btn-transfer">Transfer</button>
-        <button class="btn" id="btn-install">Install (remove from van)</button>
+        <!-- NEW: Install from the selected van (subtract only) -->
+        <button class="btn" id="btn-install" title="Remove items from the selected van as installed on site">
+          Install (van → installed)
+        </button>
       </div>
       <div class="notice muted" id="status-transfer"></div>
     </div>
 
+    <!-- Recent changes -->
     <div class="card">
-      <h3 style="margin:0 0 12px 0">Recent changes (Tracker History)</h3>
+      <h3 style="margin:0 0 12px 0">Recent changes (last 5)</h3>
       <div class="notice muted" id="status-log"></div>
       <div style="overflow:auto">
         <table id="log-table">
@@ -120,14 +128,28 @@
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZgnDlyjN7EN9-Z6NEXoRJ7vzzwaDFFB0E9za0_vi7D5KlSwuhbf2sU8scJm8mHChG/exec";
 
+  // Seeded vans: always shown, merged with what the script discovers
+  const SEEDED_VANS = [
+    'N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX',
+    'YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'
+  ];
+  const normPlate = s => {
+    if (!s) return '';
+    s = String(s).toUpperCase().trim();
+    const m = s.match(/([A-Z0-9]{1,4})[-\s]?([A-Z]{3})$/);
+    return m ? (m[1] + ' ' + m[2]) : '';
+  };
+
+  // QR params
   const qs = new URLSearchParams(window.location.search);
   const part = (qs.get("part") || "UNKNOWN").toUpperCase();
-  const loc  = (qs.get("loc")  || "").toUpperCase();
+  const loc  = (qs.get("loc")  || "A").toUpperCase();
   const desc = qs.get("desc") || "";
 
+  // UI refs
   const liveEl = document.getElementById("live");
   document.getElementById("part-id").textContent = part;
-  document.getElementById("loc").textContent = loc || "—";
+  document.getElementById("loc").textContent = loc;
   document.getElementById("desc").textContent = desc;
 
   const initialsEl = document.getElementById("initials");
@@ -141,6 +163,7 @@
   const logTBody = document.querySelector("#log-table tbody");
   const statusLog = document.getElementById("status-log");
 
+  // initials persistence
   initialsEl.value = localStorage.getItem("ss_initials") || "";
   initialsEl.addEventListener("input", () => {
     localStorage.setItem("ss_initials", initialsEl.value.trim().toUpperCase());
@@ -148,6 +171,7 @@
   });
   function userParam(){ return "&user=" + encodeURIComponent((initialsEl.value || "").trim().toUpperCase()); }
 
+  // JSONP helper
   function jsonp(url){
     return new Promise((resolve) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
@@ -159,32 +183,45 @@
   }
 
   async function loadLive(){
-    const res = await jsonp(`${WEB_APP_URL}?op=read&part=${encodeURIComponent(part)}${userParam()}`);
-    if (res && res.ok){
-      liveEl.textContent = res.live;
-      document.getElementById("loc").textContent = (res.loc || loc || "—");
-      document.getElementById("desc").textContent = res.desc || desc || "";
-    } else {
-      liveEl.textContent = "–";
-      statusUpdate.className = "notice err";
-      statusUpdate.textContent = (res && res.error) || "Could not read live count";
-    }
+    const res = await jsonp(`${WEB_APP_URL}?op=read&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}${userParam()}`);
+    if (res && res.ok){ liveEl.textContent = res.live; statusUpdate.textContent = ""; }
+    else { liveEl.textContent = "–"; statusUpdate.className="notice err"; statusUpdate.textContent = (res && res.error) || "Could not read live count"; }
   }
 
   async function loadVans(){
     vanSel.innerHTML = `<option value="">— select van —</option>`;
-    const res = await jsonp(`${WEB_APP_URL}?op=listvans${userParam()}`);
-    const fallback = ['N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX','YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'];
-    const vans = (res && res.ok && Array.isArray(res.vans) && res.vans.length) ? res.vans : fallback;
+
+    // Start with seeded vans
+    const set = new Set(SEEDED_VANS.map(normPlate).filter(Boolean));
+
+    // Ask script for discovered vans and merge
+    try {
+      const res = await jsonp(`${WEB_APP_URL}?op=listvans${userParam()}`);
+      if (res && res.ok && Array.isArray(res.vans)){
+        res.vans.map(normPlate).filter(Boolean).forEach(v => set.add(v));
+      }
+    } catch(e){ /* ignore errors, we still have the seeded list */ }
+
+    const vans = Array.from(set).sort();
+    if (!vans.length){
+      const opt = document.createElement("option");
+      opt.value = ""; opt.textContent = "No vans available";
+      vanSel.appendChild(opt);
+      return;
+    }
     for (const v of vans){
-      const opt = document.createElement("option"); opt.value = v; opt.textContent = v; vanSel.appendChild(opt);
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = v;
+      vanSel.appendChild(opt);
     }
   }
 
+  // Limit recent log to 5
   async function loadLog(){
     logTBody.innerHTML = "";
-    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`);
-    if (res && res.ok && Array.isArray(res.logs)){
+    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`); // only 5
+    if (res && res.ok){
+      statusLog.textContent = "";
       for (const r of res.logs){
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${new Date(r.date).toLocaleString()}</td>
@@ -198,7 +235,10 @@
                         <td>${r.vanQty||""}</td>`;
         logTBody.appendChild(tr);
       }
-      statusLog.textContent = res.logs.length ? "" : "No recent changes.";
+      if (!res.logs || !res.logs.length){
+        statusLog.className = "notice muted";
+        statusLog.textContent = "No recent changes.";
+      }
     } else {
       statusLog.className = "notice err"; statusLog.textContent = (res && res.error) || "Could not load history";
     }
@@ -211,7 +251,7 @@
       statusUpdate.className="notice err"; statusUpdate.textContent = "Enter a value in either TAKEN or ADDED."; return;
     }
     const delta = (added || 0) - (taken || 0);
-    const res = await jsonp(`${WEB_APP_URL}?op=update&part=${encodeURIComponent(part)}&delta=${encodeURIComponent(delta)}${userParam()}`);
+    const res = await jsonp(`${WEB_APP_URL}?op=update&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}${userParam()}`);
     if (res && res.ok){
       statusUpdate.className="notice ok"; statusUpdate.textContent = `Updated ✔ (was ${res.live_before}, now ${res.live})`;
       takenEl.value = ""; addedEl.value = "";
@@ -222,13 +262,15 @@
   });
 
   document.getElementById("btn-transfer").addEventListener("click", async () => {
-    const van = (vanSel.value || "").trim();
+    let van = normPlate(vanSel.value || "");
     if (!van) { statusTransfer.className="notice err"; statusTransfer.textContent = "Please select a van."; return; }
     const qty = parseInt(qtyEl.value || "0", 10);
     if (!(qty > 0)) { statusTransfer.className="notice err"; statusTransfer.textContent = "Enter a quantity > 0."; return; }
     const dir = (document.querySelector('input[name="dir"]:checked') || {}).value || "to-van";
-    let from = (dir === "to-van") ? (document.getElementById("loc").textContent || "") : van;
-    let to   = (dir === "to-van") ? van : (document.getElementById("loc").textContent || "");
+
+    let from = loc, to = van;
+    if (dir === "to-workshop"){ from = van; to = loc; }
+
     const res = await jsonp(`${WEB_APP_URL}?op=transfer&part=${encodeURIComponent(part)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&qty=${encodeURIComponent(qty)}${userParam()}`);
     if (res && res.ok){
       statusTransfer.className="notice ok"; statusTransfer.textContent = `Transferred ✔ ${qty} (${res.from} → ${res.to})`;
@@ -239,21 +281,35 @@
     }
   });
 
+  // NEW: Install (van → installed). Subtract from van only, log once.
   document.getElementById("btn-install").addEventListener("click", async () => {
-    const van = (vanSel.value || "").trim();
-    if (!van) { statusTransfer.className="notice err"; statusTransfer.textContent = "Please select a van."; return; }
+    let van = normPlate(vanSel.value || "");
+    if (!van) {
+      statusTransfer.className = "notice err";
+      statusTransfer.textContent = "Please select a van.";
+      return;
+    }
     const qty = parseInt(qtyEl.value || "0", 10);
-    if (!(qty > 0)) { statusTransfer.className="notice err"; statusTransfer.textContent = "Enter a quantity > 0."; return; }
-    const res = await jsonp(`${WEB_APP_URL}?op=install&part=${encodeURIComponent(part)}&van=${encodeURIComponent(van)}&qty=${encodeURIComponent(qty)}${userParam()}`);
+    if (!(qty > 0)) {
+      statusTransfer.className = "notice err";
+      statusTransfer.textContent = "Enter a quantity > 0.";
+      return;
+    }
+    const res = await jsonp(
+      `${WEB_APP_URL}?op=install&part=${encodeURIComponent(part)}&van=${encodeURIComponent(van)}&qty=${encodeURIComponent(qty)}${userParam()}`
+    );
     if (res && res.ok){
-      statusTransfer.className="notice ok"; statusTransfer.textContent = `Installed ✔ ${qty} from ${van} (was ${res.live_before}, now ${res.live})`;
+      statusTransfer.className = "notice ok";
+      statusTransfer.textContent = `Installed ✔ ${qty} from ${van} (was ${res.live_before}, now ${res.live})`;
       qtyEl.value = "";
       loadLive(); loadLog();
     } else {
-      statusTransfer.className="notice err"; statusTransfer.textContent = (res && res.error) || "Install failed";
+      statusTransfer.className = "notice err";
+      statusTransfer.textContent = (res && res.error) || "Install failed";
     }
   });
 
+  // init
   loadLive();
   loadVans();
   loadLog();
