@@ -1,62 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stormsaver Stock Tracker</title>
+<style>
+  :root{ --bg:#f7fbff; --blue1:#0ea5e9; --blue2:#2563eb; --blue3:#1d4ed8; --card:#fff; --text:#0f172a; --muted:#475569; --ring: rgba(37,99,235,.35); }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#eaf4ff 0%,#f7fbff 50%,#fff 100%); color:var(--text) }
+  header{ padding:32px 16px; text-align:center; background:radial-gradient(1000px 300px at 50% -100px, rgba(14,165,233,.25), transparent) }
+  h1{ margin:0; font-size:clamp(1.6rem,2.5vw+1rem,2.5rem); letter-spacing:.3px; background:linear-gradient(90deg,var(--blue2),var(--blue1)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800 }
+  .subtitle{ color:var(--muted); margin-top:8px }
+  .container{ max-width:1024px; margin:24px auto; padding:0 16px }
+  .card{ background:var(--card); border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(30,64,175,.10); margin-bottom:18px }
+  .row{ display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .input{ display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px }
+  label{ font-size:.9rem; color:var(--muted) }
+  input[type="number"], input[type="text"], select{ font-size:1.05rem; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; background:white; outline:none }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus{ box-shadow:0 0 0 6px var(--ring); border-color:var(--blue2) }
+  .btn{ appearance:none; border:none; cursor:pointer; background:linear-gradient(135deg,var(--blue2),var(--blue3)); color:white; padding:12px 16px; border-radius:12px; font-weight:700; font-size:1rem; transition: transform .04s ease, box-shadow .2s ease; box-shadow:0 10px 20px rgba(29,78,216,.25) }
+  .btn:active{ transform: translateY(1px) }
+  .pill{ display:inline-flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(14,165,233,.15), rgba(37,99,235,.10)); color:#0b3a75; padding:10px 14px; border-radius:999px; font-weight:600; border:1px solid rgba(37,99,235,.25) }
+  .meta{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 0 }
+  .muted{ color:#64748b }
+  .notice{ margin-top:12px; font-size:.95rem }
+  .ok{ color:#166534 } .err{ color:#991b1b }
+  table{ width:100%; border-collapse:collapse; font-size:.95rem }
+  th, td{ padding:8px 10px; border-bottom:1px solid #e2e8f0; text-align:left; }
+  th{ background:#f8fafc; font-weight:700 }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Stormsaver Stock Tracker</h1>
+    <div class="subtitle">Add your initials • adjust stock • transfer to a van • see history</div>
+  </header>
+
+  <div class="container">
+    <!-- User initials -->
+    <div class="card">
+      <div class="row">
+        <div class="input">
+          <label for="initials">Your initials (for Tracker History)</label>
+          <input id="initials" type="text" maxlength="8" placeholder="e.g. NP" />
+        </div>
+      </div>
+      <div class="notice muted" id="status-user"></div>
+    </div>
+
+    <!-- Meta -->
+    <div class="card">
+      <div class="meta">
+        <span class="pill">Part: <strong id="part-id">–</strong></span>
+        <span class="pill">Location: <strong id="loc">–</strong></span>
+        <span class="pill">Desc: <strong id="desc">–</strong></span>
+        <span class="pill">Live Count (here): <strong id="live">–</strong></span>
+      </div>
+    </div>
+
+    <!-- Adjust current location -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Adjust stock at this location</h3>
+      <div class="row">
+        <div class="input">
+          <label for="taken">Amount TAKEN (minus)</label>
+          <input id="taken" type="number" min="0" step="1" placeholder="e.g. 3" />
+        </div>
+        <div class="input">
+          <label for="added">Amount ADDED (plus)</label>
+          <input id="added" type="number" min="0" step="1" placeholder="e.g. 5" />
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="btn-update">Update stock</button>
+        <span class="muted">Tip: leave one box at 0.</span>
+      </div>
+      <div class="notice muted" id="status-update"></div>
+    </div>
+
+    <!-- Transfer workshop <-> van -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Transfer between this location and a van</h3>
+      <div class="row">
+        <div class="input">
+          <label for="van">Select van (number plate)</label>
+          <select id="van"><option value="">— loading —</option></select>
+        </div>
+        <div class="input">
+          <label>Direction</label>
+          <div style="display:flex; gap:12px; align-items:center">
+            <label><input type="radio" name="dir" value="to-van" checked /> This location → Van</label>
+            <label><input type="radio" name="dir" value="to-workshop" /> Van → This location</label>
+          </div>
+        </div>
+        <div class="input">
+          <label for="qty">Quantity to transfer</label>
+          <input id="qty" type="number" min="1" step="1" placeholder="e.g. 4" />
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="btn-transfer">Transfer</button>
+        <button class="btn" id="btn-install">Install (remove from van)</button>
+      </div>
+      <div class="notice muted" id="status-transfer"></div>
+    </div>
+
+    <!-- Recent changes -->
+    <div class="card">
+      <h3 style="margin:0 0 12px 0">Recent changes (Tracker History)</h3>
+      <div class="notice muted" id="status-log"></div>
+      <div style="overflow:auto">
+        <table id="log-table">
+          <thead>
+            <tr><th>Date</th><th>SSID</th><th>Description</th><th>Location</th><th>Change</th><th>New count</th><th>User</th><th>Van</th><th>Van QTY</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="muted" style="text-align:center; padding:10px 0 24px 0">If anything fails, check your Apps Script deployment & tab names.</div>
+  </div>
+
 <script>
-  const WEB_APP_URL = "YOUR_WEB_APP_URL_HERE"; // keep your latest URL
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxkoDZ4vrdDULnzuCbstkcc0Nt76g5FM8a2INuSW7uZRTwOMCA2mZldhFQWrGMDB43XGw/exec";
 
-  // Small connection badge
-  const conn = document.createElement("div");
-  conn.style.cssText = "position:fixed;right:12px;bottom:12px;background:#eef6ff;border:1px solid #93c5fd;padding:8px 10px;border-radius:10px;font:12px/1.1 system-ui;color:#1e3a8a;z-index:9999";
-  conn.textContent = "Connecting…";
-  document.body.appendChild(conn);
-  function setConn(ok,msg){
-    conn.style.background = ok ? "#ecfdf5" : "#fef2f2";
-    conn.style.borderColor = ok ? "#86efac" : "#fecaca";
-    conn.style.color = ok ? "#065f46" : "#7f1d1d";
-    conn.textContent = (ok ? "Connected: " : "Connection issue: ") + msg;
-  }
-
-  // Robust API call: JSONP with timeout, then fetch JSON with CORS
-  function api(params, timeoutMs=7000){
-    const base = WEB_APP_URL + (WEB_APP_URL.includes("?") ? "&" : "?") + params;
-    return new Promise((resolve) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
-      let done = false;
-      const cleanup = () => { if (s.parentNode) s.parentNode.removeChild(s); delete window[cb]; };
-
-      window[cb] = (data) => { if (done) return; done = true; cleanup(); resolve({ method:"jsonp", data }); };
-      s.onerror = async () => {
-        if (done) return; done = true; cleanup();
-        try {
-          const res = await fetch(base + "&format=json", { mode:"cors" });
-          const data = await res.json();
-          resolve({ method:"fetch", data });
-        } catch (e){
-          resolve({ method:"error", data:{ error:"Network error loading script and fetch" } });
-        }
-      };
-      s.src = base + "&callback=" + cb;
-      document.body.appendChild(s);
-
-      // timeout fallback
-      setTimeout(async () => {
-        if (done) return;
-        done = true; cleanup();
-        try {
-          const res = await fetch(base + "&format=json", { mode:"cors" });
-          const data = await res.json();
-          resolve({ method:"fetch-timeout", data });
-        } catch (e){
-          resolve({ method:"timeout", data:{ error:"Timeout then fetch failed" } });
-        }
-      }, timeoutMs);
-    });
-  }
-
-  // ====== existing refs (unchanged UI) ======
+  // Query params from QR
   const qs = new URLSearchParams(window.location.search);
   const part = (qs.get("part") || "UNKNOWN").toUpperCase();
   const loc  = (qs.get("loc")  || "A").toUpperCase();
   const desc = qs.get("desc") || "";
 
+  // UI refs
   const liveEl = document.getElementById("live");
   document.getElementById("part-id").textContent = part;
   document.getElementById("loc").textContent = loc;
@@ -73,6 +148,7 @@
   const logTBody = document.querySelector("#log-table tbody");
   const statusLog = document.getElementById("status-log");
 
+  // initials persistence
   initialsEl.value = localStorage.getItem("ss_initials") || "";
   initialsEl.addEventListener("input", () => {
     localStorage.setItem("ss_initials", initialsEl.value.trim().toUpperCase());
@@ -80,33 +156,38 @@
   });
   function userParam(){ return "&user=" + encodeURIComponent((initialsEl.value || "").trim().toUpperCase()); }
 
+  // JSONP helper (same as before)
+  function jsonp(url){
+    return new Promise((resolve) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      window[cb] = (data) => { try { resolve(data); } finally { delete window[cb]; s.remove(); } };
+      const s = document.createElement("script");
+      s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+      document.body.appendChild(s);
+    });
+  }
+
   async function loadLive(){
-    const {method, data} = await api(`op=read&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}${userParam()}`);
-    if (data && data.ok){ liveEl.textContent = data.live; setConn(true, method); }
-    else { liveEl.textContent = "–"; setConn(false, (data && data.error) || "read failed"); }
+    const res = await jsonp(`${WEB_APP_URL}?op=read&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}${userParam()}`);
+    if (res && res.ok){ liveEl.textContent = res.live; }
+    else { liveEl.textContent = "–"; }
   }
 
   async function loadVans(){
     vanSel.innerHTML = `<option value="">— select van —</option>`;
-    const seeded = ['N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX','YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'];
-    try{
-      const {data} = await api(`op=listvans${userParam()}`);
-      const vans = (data && data.ok && Array.isArray(data.vans) ? data.vans : seeded);
-      (vans.length ? vans : seeded).forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v; opt.textContent = v; vanSel.appendChild(opt);
-      });
-    }catch(e){
-      seeded.forEach(v => { const o=document.createElement("option"); o.value=v; o.textContent=v; vanSel.appendChild(o); });
+    const res = await jsonp(`${WEB_APP_URL}?op=listvans${userParam()}`);
+    const fallback = ['N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX','YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'];
+    const vans = (res && res.ok && Array.isArray(res.vans) && res.vans.length) ? res.vans : fallback;
+    for (const v of vans){
+      const opt = document.createElement("option"); opt.value = v; opt.textContent = v; vanSel.appendChild(opt);
     }
   }
 
   async function loadLog(){
     logTBody.innerHTML = "";
-    const {data} = await api(`op=log&limit=5${userParam()}`);
-    if (data && data.ok){
-      setConn(true, "ok");
-      (data.logs || []).forEach(r => {
+    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`);
+    if (res && res.ok && Array.isArray(res.logs)){
+      for (const r of res.logs){
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${new Date(r.date).toLocaleString()}</td>
                         <td>${r.part||""}</td>
@@ -118,17 +199,10 @@
                         <td>${r.van||""}</td>
                         <td>${r.vanQty||""}</td>`;
         logTBody.appendChild(tr);
-      });
-      if (!data.logs || !data.logs.length){
-        statusLog.className = "notice muted";
-        statusLog.textContent = "No recent changes.";
-      } else {
-        statusLog.textContent = "";
       }
+      statusLog.textContent = res.logs.length ? "" : "No recent changes.";
     } else {
-      setConn(false, (data && data.error) || "log failed");
-      statusLog.className = "notice err";
-      statusLog.textContent = (data && data.error) || "Could not load history";
+      statusLog.className = "notice err"; statusLog.textContent = (res && res.error) || "Could not load history";
     }
   }
 
@@ -139,13 +213,13 @@
       statusUpdate.className="notice err"; statusUpdate.textContent = "Enter a value in either TAKEN or ADDED."; return;
     }
     const delta = (added || 0) - (taken || 0);
-    const {data} = await api(`op=update&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}${userParam()}`);
-    if (data && data.ok){
-      statusUpdate.className="notice ok"; statusUpdate.textContent = `Updated ✔ (was ${data.live_before}, now ${data.live})`;
+    const res = await jsonp(`${WEB_APP_URL}?op=update&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}&delta=${encodeURIComponent(delta)}${userParam()}`);
+    if (res && res.ok){
+      statusUpdate.className="notice ok"; statusUpdate.textContent = `Updated ✔ (was ${res.live_before}, now ${res.live})`;
       takenEl.value = ""; addedEl.value = "";
       loadLive(); loadLog();
     } else {
-      statusUpdate.className="notice err"; statusUpdate.textContent = (data && data.error) || "Update failed";
+      statusUpdate.className="notice err"; statusUpdate.textContent = (res && res.error) || "Update failed";
     }
   });
 
@@ -155,15 +229,17 @@
     const qty = parseInt(qtyEl.value || "0", 10);
     if (!(qty > 0)) { statusTransfer.className="notice err"; statusTransfer.textContent = "Enter a quantity > 0."; return; }
     const dir = (document.querySelector('input[name="dir"]:checked') || {}).value || "to-van";
+
     let from = loc, to = van;
     if (dir === "to-workshop"){ from = van; to = loc; }
-    const {data} = await api(`op=transfer&part=${encodeURIComponent(part)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&qty=${encodeURIComponent(qty)}${userParam()}`);
-    if (data && data.ok){
-      statusTransfer.className="notice ok"; statusTransfer.textContent = `Transferred ✔ ${qty} (${data.from} → ${data.to})`;
+
+    const res = await jsonp(`${WEB_APP_URL}?op=transfer&part=${encodeURIComponent(part)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&qty=${encodeURIComponent(qty)}${userParam()}`);
+    if (res && res.ok){
+      statusTransfer.className="notice ok"; statusTransfer.textContent = `Transferred ✔ ${qty} (${res.from} → ${res.to})`;
       qtyEl.value = "";
       loadLive(); loadLog();
     } else {
-      statusTransfer.className="notice err"; statusTransfer.textContent = (data && data.error) || "Transfer failed";
+      statusTransfer.className="notice err"; statusTransfer.textContent = (res && res.error) || "Transfer failed";
     }
   });
 
@@ -172,13 +248,13 @@
     if (!van) { statusTransfer.className="notice err"; statusTransfer.textContent = "Please select a van."; return; }
     const qty = parseInt(qtyEl.value || "0", 10);
     if (!(qty > 0)) { statusTransfer.className="notice err"; statusTransfer.textContent = "Enter a quantity > 0."; return; }
-    const {data} = await api(`op=install&part=${encodeURIComponent(part)}&van=${encodeURIComponent(van)}&qty=${encodeURIComponent(qty)}${userParam()}`);
-    if (data && data.ok){
-      statusTransfer.className="notice ok"; statusTransfer.textContent = `Installed ✔ ${qty} from ${van} (was ${data.live_before}, now ${data.live})`;
+    const res = await jsonp(`${WEB_APP_URL}?op=install&part=${encodeURIComponent(part)}&van=${encodeURIComponent(van)}&qty=${encodeURIComponent(qty)}${userParam()}`);
+    if (res && res.ok){
+      statusTransfer.className="notice ok"; statusTransfer.textContent = `Installed ✔ ${qty} from ${van} (was ${res.live_before}, now ${res.live})`;
       qtyEl.value = "";
       loadLive(); loadLog();
     } else {
-      statusTransfer.className="notice err"; statusTransfer.textContent = (data && data.error) || "Install failed";
+      statusTransfer.className="notice err"; statusTransfer.textContent = (res && res.error) || "Install failed";
     }
   });
 
@@ -187,3 +263,5 @@
   loadVans();
   loadLog();
 </script>
+</body>
+</html>
