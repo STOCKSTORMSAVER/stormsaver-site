@@ -56,6 +56,7 @@
         <span class="pill">Desc: <strong id="desc">–</strong></span>
         <span class="pill">Live Count (here): <strong id="live">–</strong></span>
       </div>
+      <div class="notice" id="status-loc"></div>
     </div>
 
     <!-- Adjust current location -->
@@ -100,7 +101,7 @@
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
         <button class="btn" id="btn-transfer">Transfer</button>
-        <!-- NEW: Install from the selected van (subtract only) -->
+        <!-- Install from the selected van (subtract only) -->
         <button class="btn" id="btn-install" title="Remove items from the selected van as installed on site">
           Install (van → installed)
         </button>
@@ -126,31 +127,69 @@
   </div>
 
 <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzGJfa07XI58GqAhCrZdxcEQGIscvbXXUyztQvWNfEEuIMwTLBLKD7eHwok6VIZDDk12A/exec";
+  const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; // <-- replace with your live deployment URL
 
   // Seeded vans: always shown, merged with what the script discovers
   const SEEDED_VANS = [
     'N141 FOX','WP70 ROU','BJ74 EZW','YS71 HYX',
     'YM22 XBG','YR23 MYS','YP74 XCU','YM23 LRE'
   ];
+
+  // --- Helpers ---
+  const qs = new URLSearchParams(window.location.search);
+
+  function getParamAny(...names){
+    for (const n of names){
+      const v = qs.get(n) || qs.get(n.toLowerCase());
+      if (v !== null && v !== undefined && String(v).trim() !== "") return v;
+    }
+    return "";
+  }
+
+  // Normalise number plate (N141FOX → N141 FOX, AB12CDE → AB12 CDE)
   const normPlate = s => {
     if (!s) return '';
     s = String(s).toUpperCase().trim();
-    const m = s.match(/([A-Z0-9]{1,4})[-\s]?([A-Z]{3})$/);
-    return m ? (m[1] + ' ' + m[2]) : '';
+    // AB12 CDE or N141 FOX / N141FOX
+    let m = s.match(/([A-Z]{2}\d{2})\s*([A-Z]{3})$/);
+    if (m) return (m[1] + ' ' + m[2]);
+    m = s.match(/(?=.*\d)([A-Z0-9]{1,4})[-\s]?([A-Z]{3})$/);
+    if (m) return (m[1] + ' ' + m[2]);
+    return '';
   };
 
-  // QR params
-  const qs = new URLSearchParams(window.location.search);
-  const part = (qs.get("part") || "UNKNOWN").toUpperCase();
-  const loc  = (qs.get("loc")  || "A").toUpperCase();
-  const desc = qs.get("desc") || "";
+  function inferLocFromDesc(desc){
+    if (!desc) return '';
+    const U = String(desc).toUpperCase();
+    // e.g. "... LOCATION B ..." or "LOCATION A2"
+    const m = U.match(/\bLOCATION\s+([A-Z0-9\-]+)/);
+    if (m) return m[1];
+    return '';
+  }
+
+  // Resolve parameters (no hard default to "A" anymore)
+  const part = (getParamAny("part","id","ssid") || "UNKNOWN").toUpperCase();
+  let locRaw = getParamAny("loc","location","area","section","van"); // accept common variants
+  let loc = "";
+
+  // If we were given a van-like thing, normalise to plate
+  const maybePlate = normPlate(locRaw);
+  if (maybePlate) loc = maybePlate;
+  else if (locRaw) loc = String(locRaw).toUpperCase().trim();
+
+  // Try desc-based inference as a backup
+  const desc = getParamAny("desc","description");
+  if (!loc && desc){
+    const guessed = inferLocFromDesc(desc);
+    if (guessed) loc = guessed.toUpperCase();
+  }
 
   // UI refs
   const liveEl = document.getElementById("live");
   document.getElementById("part-id").textContent = part;
-  document.getElementById("loc").textContent = loc;
-  document.getElementById("desc").textContent = desc;
+  document.getElementById("loc").textContent = loc || "—";
+  document.getElementById("desc").textContent = desc || "—";
+  const statusLoc = document.getElementById("status-loc");
 
   const initialsEl = document.getElementById("initials");
   const statusUser = document.getElementById("status-user");
@@ -163,7 +202,7 @@
   const logTBody = document.querySelector("#log-table tbody");
   const statusLog = document.getElementById("status-log");
 
-  // initials persistence
+  // Persist initials
   initialsEl.value = localStorage.getItem("ss_initials") || "";
   initialsEl.addEventListener("input", () => {
     localStorage.setItem("ss_initials", initialsEl.value.trim().toUpperCase());
@@ -183,9 +222,26 @@
   }
 
   async function loadLive(){
+    if (!loc){
+      statusLoc.className = "notice err";
+      statusLoc.textContent = "No location provided in QR. Ask for a new code or choose the correct location when transferring with a van.";
+      liveEl.textContent = "–";
+      return;
+    }
     const res = await jsonp(`${WEB_APP_URL}?op=read&part=${encodeURIComponent(part)}&loc=${encodeURIComponent(loc)}${userParam()}`);
-    if (res && res.ok){ liveEl.textContent = res.live; statusUpdate.textContent = ""; }
-    else { liveEl.textContent = "–"; statusUpdate.className="notice err"; statusUpdate.textContent = (res && res.error) || "Could not read live count"; }
+    if (res && res.ok){
+      liveEl.textContent = res.live;
+      statusUpdate.textContent = "";
+      statusLoc.textContent = "";
+    } else {
+      liveEl.textContent = "–";
+      statusUpdate.className="notice err";
+      statusUpdate.textContent = (res && res.error) || "Could not read live count";
+      if (res && res.error && /not found/i.test(res.error)){
+        statusLoc.className = "notice err";
+        statusLoc.textContent = `Part not found at "${loc}". The QR likely missed the 'loc' parameter.`;
+      }
+    }
   }
 
   async function loadVans(){
@@ -200,7 +256,7 @@
       if (res && res.ok && Array.isArray(res.vans)){
         res.vans.map(normPlate).filter(Boolean).forEach(v => set.add(v));
       }
-    } catch(e){ /* ignore errors, we still have the seeded list */ }
+    } catch(e){ /* ignore */ }
 
     const vans = Array.from(set).sort();
     if (!vans.length){
@@ -219,7 +275,7 @@
   // Limit recent log to 5
   async function loadLog(){
     logTBody.innerHTML = "";
-    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`); // only 5
+    const res = await jsonp(`${WEB_APP_URL}?op=log&limit=5${userParam()}`);
     if (res && res.ok){
       statusLog.textContent = "";
       for (const r of res.logs){
@@ -240,11 +296,17 @@
         statusLog.textContent = "No recent changes.";
       }
     } else {
-      statusLog.className = "notice err"; statusLog.textContent = (res && res.error) || "Could not load history";
+      statusLog.className="notice err";
+      statusLog.textContent = (res && res.error) || "Could not load history";
     }
   }
 
   document.getElementById("btn-update").addEventListener("click", async () => {
+    if (!loc){
+      statusUpdate.className="notice err";
+      statusUpdate.textContent = "No location set. The QR must include a 'loc' parameter.";
+      return;
+    }
     const taken = parseInt(takenEl.value || "0", 10);
     const added = parseInt(addedEl.value || "0", 10);
     if ((isNaN(taken) || isNaN(added)) || (taken === 0 && added === 0)) {
@@ -262,6 +324,11 @@
   });
 
   document.getElementById("btn-transfer").addEventListener("click", async () => {
+    if (!loc){
+      statusTransfer.className="notice err";
+      statusTransfer.textContent = "No location set. The QR must include a 'loc' parameter.";
+      return;
+    }
     let van = normPlate(vanSel.value || "");
     if (!van) { statusTransfer.className="notice err"; statusTransfer.textContent = "Please select a van."; return; }
     const qty = parseInt(qtyEl.value || "0", 10);
@@ -281,7 +348,7 @@
     }
   });
 
-  // NEW: Install (van → installed). Subtract from van only, log once.
+  // Install (van → installed). Subtract from van only, log once.
   document.getElementById("btn-install").addEventListener("click", async () => {
     let van = normPlate(vanSel.value || "");
     if (!van) {
